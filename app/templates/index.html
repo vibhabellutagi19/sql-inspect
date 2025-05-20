@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Inspector</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- CodeMirror Core CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <!-- CodeMirror Themes -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/nord.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/solarized.min.css" rel="stylesheet">
+    <!-- CodeMirror Addons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366F1;
+            --secondary-color: #818CF8;
+            --background-color: #F8FAFC;
+            --card-background: #FFFFFF;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --border-color: #E2E8F0;
+            --tab-active: #6366F1;
+            --tab-hover: #818CF8;
+            --tab-inactive: #94A3B8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: white !important;
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background-color: var(--card-background);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: none;
+            padding: 1.25rem 1.25rem 0;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* New Tab Styling */
+        .nav-tabs {
+            border: none;
+            padding: 0 1.25rem;
+            margin-bottom: -1px;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .nav-tabs::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: var(--border-color);
+            z-index: 1;
+        }
+
+        .nav-tabs .nav-item {
+            margin: 0;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--tab-inactive);
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            position: relative;
+            background: transparent;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--tab-hover);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--tab-active);
+            background: transparent;
+        }
+
+        .nav-tabs .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--tab-active);
+            z-index: 2;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        /* CodeMirror Customization */
+        .CodeMirror {
+            border-radius: 12px;
+            padding: 1rem;
+            height: 200px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            padding: 1.5rem;
+            background-color: var(--card-background);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .tab-pane {
+            transition: all 0.3s ease;
+        }
+
+        /* Visualization Containers */
+        #planVisualization, #sqlFlowVisualization {
+            min-height: 600px;
+            width: 100%;
+            background: var(--card-background);
+            border-radius: 12px;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .execution-plan-container {
+            height: 600px;
+            overflow: auto;
+            padding: 1rem;
+            border-radius: 12px;
+            background-color: var(--card-background);
+        }
+
+        /* Table Styling */
+        .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        .table th {
+            background-color: var(--background-color);
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        /* Error Message Styling */
+        .error-message {
+            background-color: #FEE2E2;
+            border: 1px solid #FCA5A5;
+            color: #B91C1C;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+
+        /* Tooltip Styling */
+        .sql-tooltip {
+            background: rgba(17, 24, 39, 0.95);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 300px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container-fluid">
+            <span class="navbar-brand">SQL Inspector</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row g-4">
+            <!-- Query Editor Section -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="card-title mb-0">SQL Query</h5>
+                            <button type="button" 
+                                    class="btn btn-link p-0 text-decoration-none" 
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-custom-class="custom-tooltip"
+                                    data-bs-html="true"
+                                    data-bs-title="<strong>Keyboard Shortcuts:</strong><br>
+                                                • Ctrl/Cmd + Space: SQL Autocomplete<br>
+                                                • Ctrl/Cmd + /: Toggle Comment<br>
+                                                • Tab: Indent<br>
+                                                • Shift + Tab: Unindent<br>
+                                                • Ctrl/Cmd + Z: Undo<br>
+                                                • Ctrl/Cmd + Y: Redo">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column gap-3">
+                        <textarea id="sqlEditor" class="form-control"></textarea>
+                        <div class="query-controls d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-primary" id="executeButton">
+                                    Execute Query
+                                </button>
+                                <button class="btn btn-outline-secondary" id="autocompleteButton" type="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Show SQL Suggestions (Ctrl+Space)">
+                                    <i class="bi bi-lightbulb"></i>
+                                </button>
+                            </div>
+                            <select class="form-select" id="sampleQuery" style="max-width: 220px;">
+                                <option value="">Select a sample query...</option>
+                                <option value="0">Multiple JOINs with WHERE</option>
+                                <option value="1">Aggregation with GROUP BY</option>
+                                <option value="2">Subquery and Window Functions</option>
+                                <option value="3">Complex JOIN with Aggregation</option>
+                            </select>
+                        </div>
+                        <div id="tableListContainer" class="mt-3">
+                            <div class="card shadow-sm available-tables-card">
+                                <div class="card-header py-2 px-3 d-flex align-items-center gap-2 available-tables-header">
+                                    <i class="bi bi-table available-tables-icon"></i>
+                                    <span class="available-tables-label">Available Tables</span>
+                                </div>
+                                <div class="card-body py-2 px-3" id="tableListBody" style="font-size:14px;color:#334155;">
+                                    <span>Loading tables...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Section -->
+            <div class="col-md-6">
+                <div class="card h-100 visualization-card">
+                    <div class="card-header visualization-card-header">
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#results">Results</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#sqlFlow">SQL Flow</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#executionPlan">
+                                    Execution Plan
+                                    <button type="button" class="btn btn-link p-0 ms-1 align-baseline info-ep-tooltip" tabindex="0"
+                                        data-bs-toggle="popover"
+                                        data-bs-trigger="focus hover"
+                                        data-bs-placement="bottom"
+                                        data-bs-html="true"
+                                        data-bs-content="<strong style='color:#38bdf8;'>How to Read the Graph</strong><ul style='margin:0 0 0 1em;padding:0;font-size:12px;color:#64748b;'><li><b>Nodes</b> represent query operations (scans, joins, sorts, etc.).</li><li><b>Links</b> show data flow between operations.</li><li>Hover a node to see details and highlight related SQL.</li><li>Cost, rows, and time are key metrics for performance.</li><li>Root node is the final result; leaves are data sources.</li></ul>">
+                                        <i class="bi bi-info-circle" style="font-size:1.1em;color:#38bdf8;"></i>
+                                    </button>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="results">
+                            <div id="queryResults" class="table-responsive"></div>
+                        </div>
+                        <div class="tab-pane fade" id="sqlFlow">
+                            <div class="sql-flow-container">
+                                <div id="sqlFlowVisualization"></div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="executionPlan">
+                            <div class="execution-plan-container">
+                                <div id="planVisualization"></div>
+                                <div class="how-to-read-ep mt-4 p-3 rounded-3 shadow-sm" style="background:linear-gradient(135deg,#f0f9ff 0%,#e0e7ef 100%);border:1.5px solid #bae6fd;max-width:600px;margin:auto;">
+                                    <div class="d-flex align-items-center mb-2" style="gap:8px;">
+                                        <i class="bi bi-info-circle" style="color:#38bdf8;font-size:1.3em;"></i>
+                                        <span style="font-weight:600;color:#38bdf8;font-size:1.1em;">How to Read the Graph</span>
+                                    </div>
+                                    <ul class="mb-0 ps-4" style="font-size:13.5px;color:#334155;">
+                                        <li><b>Nodes</b> represent query operations (scans, joins, sorts, etc.).</li>
+                                        <li><b>Links</b> show data flow between operations.</li>
+                                        <li>Hover a node to see details and highlight related SQL.</li>
+                                        <li>Cost, rows, and time are key metrics for performance.</li>
+                                        <li>Root node is the final result; leaves are data sources.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    
+    <!-- CodeMirror and other scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <!-- CodeMirror SQL Mode -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+    <!-- CodeMirror Addons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/sql-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="{{ url_for('static', path='/js/main.js') }}" type="module"></script>
+
+    <script>
+        // Initialize tooltips after all scripts are loaded
+        window.addEventListener('load', function() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => 
+                new bootstrap.Tooltip(tooltipTriggerEl, {
+                    trigger: 'hover focus',
+                    html: true
+                })
+            );
+            // Initialize popover for Execution Plan info icon
+            const epInfoBtn = document.querySelector('.info-ep-tooltip');
+            if (epInfoBtn) {
+                new bootstrap.Popover(epInfoBtn);
+            }
+        });
+    </script>
+</body>
+</html> 
