@@ -1,6 +1,6 @@
-# SQL Inspector
+# SQL Inspect
 
-A web-based SQL query visualizer and debugger that helps you understand and optimize your PostgreSQL queries. Similar to Python Tutor, but for SQL!
+A web-based SQL query visualizer and debugger that helps you understand and optimize your PostgreSQL queries.
 
 ## Features
 
@@ -41,6 +41,14 @@ Edit the database connection string in `app/main.py` to match your PostgreSQL se
 engine = create_engine("postgresql://username:password@localhost:5432/database_name")
 ```
 
+## Docker setup
+
+1. Build the Docker image:
+```bash
+docker build -t sql-inspect .
+```
+
+
 ## Running the Application
 
 1. Start the FastAPI server:
@@ -66,11 +74,3 @@ http://localhost:8000
 - Ensure proper database user permissions are set
 - Do not use in production without implementing proper security measures
 - Consider implementing query whitelisting for additional security
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
